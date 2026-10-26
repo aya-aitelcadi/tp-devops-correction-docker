@@ -1,0 +1,33 @@
+
+# CI : compilation et tests automatiques du backend
+name: CI devops 2025
+
+# Déclencher le workflow lors d'un push sur main ou develop,
+# ainsi que lors de la création ou mise à jour d'une Pull Request.
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Récupérer le code du dépôt
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Installer Java 21 pour compiler le projet Maven
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Compiler le projet et exécuter les tests unitaires et d'intégration
+      - name: Build and test with Maven
+        run: mvn -B clean verify --file simple-api/pom.xml
