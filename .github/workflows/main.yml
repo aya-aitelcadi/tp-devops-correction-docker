@@ -1,4 +1,4 @@
-
+﻿
 # CI/CD : tests du backend et publication des images Docker
 name: CI devops 2025
 
@@ -11,12 +11,12 @@ on:
   pull_request:
 
 jobs:
-  # Job 1 : compiler l'application et exécuter les tests
+  # Job 1 : compiler l'application et exÃ©cuter les tests
   test-backend:
     runs-on: ubuntu-24.04
 
     steps:
-      # Récupérer le code du dépôt
+      # RÃ©cupÃ©rer le code du dÃ©pÃ´t
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -32,6 +32,20 @@ jobs:
       - name: Build and test with Maven
         run: mvn -B clean verify --file simple-api/pom.xml
 
+      # Analyser la qualitÃ© du code avec SonarCloud
+      - name: Analyze with SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn -B verify
+          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=aya-aitelcadi_tp-devops-correction-docker
+          -Dsonar.organization=aya-aitelcadi
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.token=${SONAR_TOKEN}
+          --file simple-api/pom.xml
+
+
   # Job 2 : construire les images et les publier sur main
   build-and-push-docker-image:
     needs: test-backend
@@ -41,7 +55,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
-      # Récupérer les fichiers et Dockerfiles
+      # RÃ©cupÃ©rer les fichiers et Dockerfiles
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -49,7 +63,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Se connecter à Docker Hub avec les secrets GitHub
+      # Se connecter Ã  Docker Hub avec les secrets GitHub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -64,7 +78,7 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
 
-      # Construire et publier l'image de la base de données
+      # Construire et publier l'image de la base de donnÃ©es
       - name: Build and push database
         uses: docker/build-push-action@v6
         with:
