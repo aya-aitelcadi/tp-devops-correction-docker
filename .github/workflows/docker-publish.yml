@@ -1,0 +1,60 @@
+
+# CD : publier les images Docker après la réussite de la CI
+name: Publish Docker Images
+
+on:
+  # Déclencher ce workflow après la fin du workflow CI Backend
+  workflow_run:
+    workflows: ["CI Backend"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  build-and-push-docker-image:
+    # Publier uniquement si la CI a réussi sur main
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Récupérer le code correspondant à l'exécution de la CI
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      # Configurer Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Se connecter à Docker Hub avec les secrets GitHub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Construire et publier l'image du backend
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./simple-api
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-simple-api:latest
+
+      # Construire et publier l'image de la base de données
+      - name: Build and push database
+        uses: docker/build-push-action@v6
+        with:
+          context: ./database
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-database:latest
+
+      # Construire et publier l'image du serveur HTTP
+      - name: Build and push http-server
+        uses: docker/build-push-action@v6
+        with:
+          context: ./http-server
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/tp-devops-http-server:latest
